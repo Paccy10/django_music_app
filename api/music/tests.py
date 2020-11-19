@@ -50,11 +50,9 @@ class RegisterUserTest(BaseViewTest):
             reverse('register'), 
             data=json.dumps(user),
             content_type='application/json')
-        user['id'] = 2
-        del user['password']
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['user'], user)  
+        self.assertEqual(response.data['user']['username'], user['username'])  
 
     def test_register_user_fails(self):
         response = self.client.post(
@@ -106,10 +104,9 @@ class CreateSongTest(BaseViewTest):
             reverse('all-songs'), 
             data=json.dumps(song),
             content_type='application/json')
-        song['id'] = 5
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data['song'], song)  
+        self.assertEqual(response.data['song']['title'], song['title'])  
 
     def test_create_song_fails(self):
         self.login_client('test_user', 'testing')
@@ -123,43 +120,55 @@ class CreateSongTest(BaseViewTest):
 class GetSingleSongTest(BaseViewTest):
 
     def test_get_single_song_succeeds(self):
-        response = self.client.get(reverse('song-details', kwargs={'pk': 1}))
+        song = Song.objects.create(
+            title='hello',
+            artist='adele'
+        )
+        serialized_song = SongSerializer(song).data
+        response = self.client.get(reverse('song-details', kwargs={'pk': serialized_song['id']}))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['song'], 
-                        {'id': 1, 'title': 'like glue', 'artist': 'sean paul'})
+        self.assertEqual(response.data['song']['title'], serialized_song['title'])
 
     def test_get_single_song_fails(self):
-        response = self.client.get(reverse('song-details', kwargs={'pk': 10}))
+        response = self.client.get(reverse('song-details', kwargs={'pk': 10000}))
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data['message'], 'Song with id: 10 does not exist')
+        self.assertEqual(response.data['message'], 'Song with id: 10000 does not exist')
 
 class UpdateSongTest(BaseViewTest):
 
     def test_update_song(self):
         self.login_client('test_user', 'testing')
-        song = {
+        song = Song.objects.create(
+            title='hello',
+            artist='adele'
+        )
+        serialized_song = SongSerializer(song).data
+        updated_song = {
             'title': 'the vow', 
             'artist': 'bull dogg'
         }
         response = self.client.put(
-            reverse('song-details', kwargs={'pk': 1}),
-            data=json.dumps(song),
-            content_type='application/json')
-
-        song['id'] = 1    
+            reverse('song-details', kwargs={'pk': serialized_song['id']}),
+            data=json.dumps(updated_song),
+            content_type='application/json')   
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['song'], song)
+        self.assertEqual(response.data['song']['title'], updated_song['title'])
 
 class DeleteSongTest(BaseViewTest):
 
     def test_delete_song(self):
         self.login_client('test_user', 'testing')
-        response = self.client.delete(reverse('song-details', kwargs={'pk': 1}))
+        song = Song.objects.create(
+            title='hello',
+            artist='adele'
+        )
+        serialized_song = SongSerializer(song).data
+        response = self.client.delete(reverse('song-details', kwargs={'pk': serialized_song['id']}))
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(response.data['message'], 'Song with id: 1 is deleted')
+        self.assertEqual(response.data['message'], f"Song with id: {serialized_song['id']} is deleted")
 
         

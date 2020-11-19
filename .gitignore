@@ -9,3 +9,5 @@ __pycache__/
 htmlcov
 
 .DS_STORE
+
+db.sqlite3
