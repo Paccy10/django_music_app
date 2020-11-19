@@ -1,0 +1,40 @@
+version: '3.7'
+
+services: 
+  postgres:
+    image: 'postgres:latest'
+    restart: 'always'
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data/
+    environment: 
+      POSTGRES_PASSWORD: postgres_password
+
+  api:
+    build: 
+      context: .
+    volumes: 
+      - static_data:/vol/web
+    environment: 
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    depends_on:
+      - postgres
+
+  proxy:
+    build: 
+      context: ./proxy
+    volumes: 
+      - static_data:/vol/static
+    ports: 
+      - "8080:8080"
+    depends_on:
+      - api  
+
+volumes: 
+  postgres_data:
+  static_data:      

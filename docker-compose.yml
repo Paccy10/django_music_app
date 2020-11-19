@@ -1,0 +1,32 @@
+version: '3'
+
+services: 
+  postgres:
+    image: 'postgres:latest'
+    restart: 'always'
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data/
+    environment: 
+      POSTGRES_PASSWORD: postgres_password
+
+  api:
+    build:
+      context: .
+    command: sh -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./api:/api
+    ports: 
+      - "8000:8000"  
+    environment: 
+      - DEBUG=1
+      - SECRET_KEY=${SECRET_KEY}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+    depends_on:
+      - postgres
+
+volumes: 
+  postgres_data:
